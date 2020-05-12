@@ -52,7 +52,7 @@
         }
 
         function logger2({ getState }) {
-            return function next(){
+            return function (next){
                 return function (action){
                     console.log('will dispatch', action)
 
