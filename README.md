@@ -58,6 +58,8 @@ API
 [redux 中文文档](https://www.redux.org.cn/)<br>
 [Redux源码分析(1) - Redux介绍及使用](https://blog.csdn.net/zcs425171513/article/details/105619754)<br>
 
+[@德来：用 Git Subtree 在多个 Git 项目间双向同步子项目，附简明使用手册](https://segmentfault.com/a/1190000003969060)
+
 ## 另一个系列
 
 [面试官问：JS的继承](https://juejin.im/post/5c433e216fb9a049c15f841b)<br>
