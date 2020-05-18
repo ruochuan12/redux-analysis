@@ -1,3 +1,0 @@
-[submodule "redux"]
-	path = redux
-	url = https://github.com/reduxjs/redux.git
