@@ -5,11 +5,15 @@ import { terser } from 'rollup-plugin-terser'
 
 import pkg from './package.json'
 
+const sourcemap = {
+  sourcemap: true,
+};
+
 export default [
   // CommonJS
   {
     input: 'src/index.js',
-    output: { file: 'lib/redux.js', format: 'cjs', indent: false },
+    output: { file: 'lib/redux.js', format: 'cjs', indent: false, ...sourcemap },
     external: [
       ...Object.keys(pkg.dependencies || {}),
       ...Object.keys(pkg.peerDependencies || {})
@@ -20,7 +24,7 @@ export default [
   // ES
   {
     input: 'src/index.js',
-    output: { file: 'es/redux.js', format: 'es', indent: false },
+    output: { file: 'es/redux.js', format: 'es', indent: false, ...sourcemap },
     external: [
       ...Object.keys(pkg.dependencies || {}),
       ...Object.keys(pkg.peerDependencies || {})
@@ -31,7 +35,7 @@ export default [
   // ES for Browsers
   {
     input: 'src/index.js',
-    output: { file: 'es/redux.mjs', format: 'es', indent: false },
+    output: { file: 'es/redux.mjs', format: 'es', indent: false, ...sourcemap },
     plugins: [
       nodeResolve(),
       replace({
@@ -55,7 +59,8 @@ export default [
       file: 'dist/redux.js',
       format: 'umd',
       name: 'Redux',
-      indent: false
+      indent: false,
+      ...sourcemap
     },
     plugins: [
       nodeResolve(),
@@ -75,7 +80,8 @@ export default [
       file: 'dist/redux.min.js',
       format: 'umd',
       name: 'Redux',
-      indent: false
+      indent: false,
+      ...sourcemap
     },
     plugins: [
       nodeResolve(),
