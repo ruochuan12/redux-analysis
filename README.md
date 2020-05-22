@@ -2,7 +2,7 @@
 
 ## 1. 前言
 
->这是`学习源码整体架构系列`第八篇。整体架构这词语好像有点大，姑且就算是源码整体结构吧，主要就是学习是代码整体结构，不深究其他不是主线的具体函数的实现。本篇文章学习的是实际仓库的代码。
+>你好，我是若川。这是`学习源码整体架构系列`第八篇。整体架构这词语好像有点大，姑且就算是源码整体结构吧，主要就是学习是代码整体结构，不深究其他不是主线的具体函数的实现。本篇文章学习的是实际仓库的代码。
 
 `学习源码整体架构系列`文章如下：
 >1.[学习 jQuery 源码整体架构，打造属于自己的 js 类库](https://juejin.im/post/5d39d2cbf265da1bc23fbd42)<br>
@@ -41,7 +41,7 @@ git subtree add --prefix=redux https://github.com/reduxjs/redux.git 4.x
 
 ## 3. 调试源代码
 
-看源码调试很重要，所以我的每篇源码文章都详细描述如何调试源码。
+看源码调试很重要，所以我的每篇源码文章都详细描述（也许有人看来是比较啰嗦...）如何调试源码。
 
 ### 3.1 rollup 生成 sourcemap 便于调试
 
@@ -85,7 +85,90 @@ hs -p 5000
 
 就可以开心的调试啦。可以直接克隆我的项目`git clone http://github.com/lxchuan12/redux-analysis.git`。本地调试，动手实践，容易消化吸收。
 
-API
+## 4. 调试简单计算器的例子
+
+接着我们来看`examples/index.html`文件。先看`html`部分。只是写了几个 `button`，比较简单。
+
+```html
+<div>
+    <p>
+    Clicked: <span id="value">0</span> times
+    <button id="increment">+</button>
+    <button id="decrement">-</button>
+    <button id="incrementIfOdd">Increment if odd</button>
+    <button id="incrementAsync">Increment async</button>
+    </p>
+</div>
+```
+
+`js部分`，也比较简单。声明了一个`counter`函数，传递给`Redux.createStore(counter)`，得到结果`store`，而`store`是个对象。`render`方法渲染数字到页面。用`store.subscribe(render)`订阅的`render`方法。还有`store.dispatch({type: 'INCREMENT' })`方法，调用`store.dispatch`时会触发`render`方法。这样就实现了一个计算器。
+
+```js
+function counter(state, action) {
+    if (typeof state === 'undefined') {
+        return 0
+    }
+
+    switch (action.type) {
+        case 'INCREMENT':
+        return state + 1
+        case 'DECREMENT':
+        return state - 1
+        default:
+        return state
+    }
+}
+
+var store = Redux.createStore(counter)
+var valueEl = document.getElementById('value')
+
+function render() {
+    valueEl.innerHTML = store.getState().toString()
+}
+
+render()
+store.subscribe(render)
+
+document.getElementById('increment')
+.addEventListener('click', function () {
+    store.dispatch({ type: 'INCREMENT' })
+})
+
+// 省略部分暂时无效代码...
+```
+
+思考：看了这段代码，你会在哪打断点来调试呢。
+
+```js
+// 三处可以断点来看
+var store = Redux.createStore(counter)
+store.subscribe(render)
+store.dispatch({ type: 'INCREMENT' })
+```
+
+![redux debugger图](./images/redux-debugger.png)
+
+断点调试，按`F5`刷新页面后，按`F8`，把鼠标放在`Redux`和`store`上。
+
+可以看到`Redux`上有好几个方法。分别是：
+- __DO_NOT_USE__ActionTypes: {INIT: "@@redux/INITu.v.d.u.6.r", REPLACE: "@@redux/REPLACEg.u.u.7.c", PROBE_UNKNOWN_ACTION: ƒ}
+- applyMiddleware: ƒ applyMiddleware()
+- bindActionCreators: ƒ bindActionCreators(actionCreators, dispatch)
+- combineReducers: ƒ combineReducers(reducers)
+- compose: ƒ compose()
+- createStore: ƒ createStore(reducer, preloadedState, enhancer)
+
+再看`store`也有几个方法。分别是：
+
+- dispatch: ƒ dispatch(action)
+- subscribe: ƒ subscribe(listener)
+- getState: ƒ getState()
+- replaceReducer: ƒ replaceReducer(nextReducer)
+- Symbol(observable): ƒ observable()
+
+也就是[官方文档redux.org.js](https://redux.org.js)上的 `API`。
+
+暂时不去深究每一个`API`的实现。重新按`F5`刷新页面，断点到`var store = Redux.createStore(counter)`。按`F11`，先走一遍主流程。
 
 ## TOP API
 
@@ -114,6 +197,10 @@ API
 ### vuex 只能用于 vue vs redux 可以用于其他项目 比如小程序、jQuery等
 
 ### vuex 插件 vs redux 中间件
+
+## 中心思想是什么
+
+小时候语文课本习题经常问文章的中心思想是什么。
 
 ## 推荐阅读
 
