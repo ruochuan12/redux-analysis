@@ -1,6 +1,6 @@
 # 学习 redux 源码整体架构
 
-## 前言
+## 1. 前言
 
 >这是`学习源码整体架构系列`第八篇。整体架构这词语好像有点大，姑且就算是源码整体结构吧，主要就是学习是代码整体结构，不深究其他不是主线的具体函数的实现。本篇文章学习的是实际仓库的代码。
 
@@ -19,7 +19,71 @@
 源码类文章，一般阅读量不高。已经有能力看懂的，自己就看了。不想看，不敢看的就不会去看源码。<br>
 所以我的文章，尽量写得让想看源码又不知道怎么看的读者能看懂。
 
-redux-analysis
+## 2. git subtree 管理源代码
+
+写了很多源码文章，`vuex`、`axios`、`koa`等都是使用新的仓库克隆一份源码在自己仓库中。
+虽然电脑可以拉取最新代码，看到原作者的git信息。但上传到`github`后。读者却看不到原仓库作者的`git`信息了。于是我找到了`git submodules` 方案，但并不是很适合。再后来发现了`git subtree`。
+
+简单说下 `npm package`和`git subtree`的区别。
+`npm package`是单向的。`git subtree`则是双向的。
+
+具体可以查看这篇文章[@德来（原有赞大佬）：用 Git Subtree 在多个 Git 项目间双向同步子项目，附简明使用手册](https://segmentfault.com/a/1190000003969060)
+
+学会了`git subtree`后，我新建了`redux-analysis`项目后，把`redux`源码`4.x`（`master`分支是`ts`，文章中暂不想让一些不熟悉`ts`的读者看不懂）分支克隆到了我的项目里的一个子项目，得以保留`git`信息。
+
+对应命令则是：
+
+```sh
+git subtree add --prefix=redux https://github.com/reduxjs/redux.git 4.x
+```
+
+### 2.1
+
+## 3. 调试源代码
+
+看源码调试很重要，所以我的每篇源码文章都详细描述如何调试源码。
+
+### 3.1 rollup 生成 sourcemap 便于调试
+
+修改`rollup.config.js`文件，`output`输出的配置生成`sourcemap`。
+
+```js
+// rollup.config.js 有些省略
+const sourcemap = {
+  sourcemap: true,
+};
+
+output: {
+    // ...
+    ...sourcemap: true,
+}
+```
+
+安装依赖
+
+```sh
+git clone http://github.com/lxchuan12/redux-analysis.git
+cd redux-analysi/redux
+npm i
+npm run build
+# 会生成sourcemap文件到`dist`等目录下。
+```
+
+仔细看看`redux/examples`目录和`redux/README`。
+
+这时我在根路径下，新建文件夹`examples`，把原生js写的计算器`redux/examples/counter-vanilla/index.html`，复制到`examples/index.html`。还有打包后的包含`sourcemap`的`dist`目录。
+
+修改`index.html`的`script`的`redux.js`文件为`dist中的路径`。
+
+```sh
+# redux-analysis 根目录
+# 安装启动服务的npm包
+npm i -g http-server
+cd examples
+hs -p 5000
+```
+
+就可以开心的调试啦。可以直接克隆我的项目`git clone http://github.com/lxchuan12/redux-analysis.git`。本地调试，动手实践，容易消化吸收。
 
 API
 
@@ -57,8 +121,7 @@ API
 [redux 英文文档](https://redux.js.org)<br>
 [redux 中文文档](https://www.redux.org.cn/)<br>
 [Redux源码分析(1) - Redux介绍及使用](https://blog.csdn.net/zcs425171513/article/details/105619754)<br>
-
-[@德来：用 Git Subtree 在多个 Git 项目间双向同步子项目，附简明使用手册](https://segmentfault.com/a/1190000003969060)
+[若川的学习redux源码仓库](http://github.com/lxchuan12/redux-analysis.git)
 
 ## 另一个系列
 
@@ -80,6 +143,6 @@ API
 
 ## 欢迎加微信交流 微信公众号
 
-可能比较有趣的微信公众号，长按扫码关注（**回复pdf获取前端优质书籍pdf**）。欢迎加我微信`lxchuan12`（注明来源，基本来者不拒），拉您进【前端视野交流群】，长期交流学习~
+可能比较有趣的微信公众号，长按扫码关注（**回复pdf获取前端优质书籍pdf**）。欢迎加我微信`ruochuan12`（注明来源，基本来者不拒），拉您进【前端视野交流群】，长期交流学习~
 
 ![若川视野](https://github.com/lxchuan12/blog/raw/master/docs/about/wechat-official-accounts-mini.jpg)
