@@ -19,6 +19,12 @@
 源码类文章，一般阅读量不高。已经有能力看懂的，自己就看了。不想看，不敢看的就不会去看源码。<br>
 所以我的文章，尽量写得让想看源码又不知道怎么看的读者能看懂。
 
+TODO:
+阅读本文你将学到：
+>1.
+>2.
+>3.
+
 ## 2. git subtree 管理源代码
 
 写了很多源码文章，`vuex`、`axios`、`koa`等都是使用新的仓库克隆一份源码在自己仓库中。
@@ -37,9 +43,7 @@
 git subtree add --prefix=redux https://github.com/reduxjs/redux.git 4.x
 ```
 
-### 2.1
-
-## 3. 调试源代码
+## 3. 调试 redux 源码
 
 看源码调试很重要，所以我的每篇源码文章都详细描述（也许有人看来是比较啰嗦...）如何调试源码。
 
@@ -55,7 +59,7 @@ const sourcemap = {
 
 output: {
     // ...
-    ...sourcemap: true,
+    ...sourcemap,
 }
 ```
 
@@ -71,7 +75,7 @@ npm run build
 
 仔细看看`redux/examples`目录和`redux/README`。
 
-这时我在根路径下，新建文件夹`examples`，把原生js写的计算器`redux/examples/counter-vanilla/index.html`，复制到`examples/index.html`。还有打包后的包含`sourcemap`的`dist`目录。
+这时我在根路径下，新建文件夹`examples`，把原生js写的计数器`redux/examples/counter-vanilla/index.html`，复制到`examples/index.html`。还有打包后的包含`sourcemap`的`dist`目录。
 
 修改`index.html`的`script`的`redux.js`文件为`dist中的路径`。
 
@@ -85,7 +89,7 @@ hs -p 5000
 
 就可以开心的调试啦。可以直接克隆我的项目`git clone http://github.com/lxchuan12/redux-analysis.git`。本地调试，动手实践，容易消化吸收。
 
-## 4. 调试简单计算器的例子
+## 4. 调试简单计数器的例子
 
 接着我们来看`examples/index.html`文件。先看`html`部分。只是写了几个 `button`，比较简单。
 
@@ -101,7 +105,7 @@ hs -p 5000
 </div>
 ```
 
-`js部分`，也比较简单。声明了一个`counter`函数，传递给`Redux.createStore(counter)`，得到结果`store`，而`store`是个对象。`render`方法渲染数字到页面。用`store.subscribe(render)`订阅的`render`方法。还有`store.dispatch({type: 'INCREMENT' })`方法，调用`store.dispatch`时会触发`render`方法。这样就实现了一个计算器。
+`js部分`，也比较简单。声明了一个`counter`函数，传递给`Redux.createStore(counter)`，得到结果`store`，而`store`是个对象。`render`方法渲染数字到页面。用`store.subscribe(render)`订阅的`render`方法。还有`store.dispatch({type: 'INCREMENT' })`方法，调用`store.dispatch`时会触发`render`方法。这样就实现了一个计数器。
 
 ```js
 function counter(state, action) {
@@ -140,9 +144,17 @@ document.getElementById('increment')
 思考：看了这段代码，你会在哪打断点来调试呢。
 
 ```js
-// 三处可以断点来看
+// 四处可以断点来看
+// 1.
 var store = Redux.createStore(counter)
+// 2.
+function render() {
+valueEl.innerHTML = store.getState().toString()
+}
+render()
+// 3.
 store.subscribe(render)
+// 4.
 store.dispatch({ type: 'INCREMENT' })
 ```
 
@@ -168,7 +180,177 @@ store.dispatch({ type: 'INCREMENT' })
 
 也就是[官方文档redux.org.js](https://redux.org.js)上的 `API`。
 
-暂时不去深究每一个`API`的实现。重新按`F5`刷新页面，断点到`var store = Redux.createStore(counter)`。按`F11`，先走一遍主流程。
+暂时不去深究每一个`API`的实现。重新按`F5`刷新页面，断点到`var store = Redux.createStore(counter)`。一直按`F11`，先走一遍主流程。
+
+### 4.1 Redux.createSotre
+
+`createStore` 函数结构是这样的，是不是看起来很简单，最终返回对象`store`，包含`dispatch`、`subscribe`、`getState`、`replaceReducer`等方法。
+
+```js
+// 省略了若干代码
+export default function createStore(reducer, preloadedState, enhancer) {
+    // 省略参数校验和替换
+    // 当前的 reducer 函数
+    let currentReducer = reducer
+    // 当前state
+    let currentState = preloadedState
+    // 当前的监听数组函数
+    let currentListeners = []
+    // 下一个监听数组函数
+    let nextListeners = currentListeners
+    // 是否正在dispatch中
+    let isDispatching = false
+    function ensureCanMutateNextListeners() {
+        if (nextListeners === currentListeners) {
+        nextListeners = currentListeners.slice()
+        }
+    }
+    function getState() {
+        return currentState
+    }
+    function subscribe(listener) {}
+    function dispatch(action) {}
+    function replaceReducer(nextReducer) {}
+    function observable() {}
+    // ActionTypes.INIT @@redux/INITp.p.e.1.s.t
+    dispatch({ type: ActionTypes.INIT })
+    return {
+        dispatch,
+        subscribe,
+        getState,
+        replaceReducer,
+        [$$observable]: observable
+    }
+}
+```
+
+### 4.2 store.dispatch(action)
+
+```js
+function dispatch(action) {
+    // 判断action是否是对象，不是则报错
+    if (!isPlainObject(action)) {
+      throw new Error(
+        'Actions must be plain objects. ' +
+          'Use custom middleware for async actions.'
+      )
+    }
+    // 判断action.type 是否存在，没有则报错
+    if (typeof action.type === 'undefined') {
+      throw new Error(
+        'Actions may not have an undefined "type" property. ' +
+          'Have you misspelled a constant?'
+      )
+    }
+    // 不是则报错
+    if (isDispatching) {
+      throw new Error('Reducers may not dispatch actions.')
+    }
+
+    try {
+      isDispatching = true
+      currentState = currentReducer(currentState, action)
+    } finally {
+        // 调用完后置为 false
+      isDispatching = false
+    }
+    //  把 
+    const listeners = (currentListeners = nextListeners)
+    for (let i = 0; i < listeners.length; i++) {
+      const listener = listeners[i]
+      listener()
+    }
+    // 最终返回 action
+    return action
+  }
+```
+
+```js
+var store = Redux.createStore(counter)
+```
+
+上文调试完了这句。
+
+继续按`F11`调试。
+
+```js
+function render() {
+    valueEl.innerHTML = store.getState().toString()
+}
+
+render()
+```
+
+### 4.3 store.getState()
+
+`getState`函数实现比较简单。
+
+```js
+function getState() {
+    // 判断正在dispatch中，则报错
+    if (isDispatching) {
+        throw new Error(
+        'You may not call store.getState() while the reducer is executing. ' +
+            'The reducer has already received the state as an argument. ' +
+            'Pass it down from the top reducer instead of reading it from the store.'
+        )
+    }
+    // 返回当前的state
+    return currentState
+}
+```
+
+### 4.4 store.subscribe(listener)
+
+订阅
+
+```js
+function subscribe(listener) {
+    // 订阅参数校验不是函数报错
+    if (typeof listener !== 'function') {
+      throw new Error('Expected the listener to be a function.')
+    }
+    // 正在dispatch中，报错
+    if (isDispatching) {
+      throw new Error(
+        'You may not call store.subscribe() while the reducer is executing. ' +
+          'If you would like to be notified after the store has been updated, subscribe from a ' +
+          'component and invoke store.getState() in the callback to access the latest state. ' +
+          'See https://redux.js.org/api-reference/store#subscribelistener for more details.'
+      )
+    }
+    // 订阅为 true
+    let isSubscribed = true
+
+    ensureCanMutateNextListeners()
+    nextListeners.push(listener)
+
+    // 返回一个取消订阅的函数
+    return function unsubscribe() {
+      if (!isSubscribed) {
+        return
+      }
+      // 正在dispatch中，则报错
+      if (isDispatching) {
+        throw new Error(
+          'You may not unsubscribe from a store listener while the reducer is executing. ' +
+            'See https://redux.js.org/api-reference/store#subscribelistener for more details.'
+        )
+      }
+      // 订阅为 false
+      isSubscribed = false
+
+      ensureCanMutateNextListeners()
+    //   找到当前监听函数
+      const index = nextListeners.indexOf(listener)
+    //   在数组中删除
+      nextListeners.splice(index, 1)
+      currentListeners = null
+    }
+  }
+```
+
+到这里，我们就调试学习完了`Redux.createSotre`、`store.dispatch`、`store.getState`、`store.subscribe`的源码。
 
 ## TOP API
 
@@ -194,6 +376,10 @@ store.dispatch({ type: 'INCREMENT' })
 
 ## vuex 和 redux 对比
 
+构造函数
+
+函数式编程、闭包
+
 ### vuex 只能用于 vue vs redux 可以用于其他项目 比如小程序、jQuery等
 
 ### vuex 插件 vs redux 中间件
@@ -201,6 +387,8 @@ store.dispatch({ type: 'INCREMENT' })
 ## 中心思想是什么
 
 小时候语文课本习题经常问文章的中心思想是什么。
+
+闭包。
 
 ## 推荐阅读
 
