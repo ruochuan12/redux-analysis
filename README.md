@@ -1,8 +1,8 @@
-# 学习 redux 源码整体架构
+# 学习 redux 源码整体架构，学会 redux 中间件
 
 ## 1. 前言
 
->你好，我是若川。这是`学习源码整体架构系列`第八篇。整体架构这词语好像有点大，姑且就算是源码整体结构吧，主要就是学习是代码整体结构，不深究其他不是主线的具体函数的实现。本篇文章学习的是实际仓库的代码。
+>你好，我是[若川](http://lxchuan12.cn/)。这是`学习源码整体架构系列`第八篇。整体架构这词语好像有点大，姑且就算是源码整体结构吧，主要就是学习是代码整体结构，不深究其他不是主线的具体函数的实现。本篇文章学习的是实际仓库的代码。
 
 `学习源码整体架构系列`文章如下：
 >1.[学习 jQuery 源码整体架构，打造属于自己的 js 类库](https://juejin.im/post/5d39d2cbf265da1bc23fbd42)<br>
@@ -21,9 +21,11 @@
 
 TODO:
 阅读本文你将学到：
->1.
->2.
->3.
+
+>1. git subtree 管理子仓库
+>2. 如何学习 redux 源码
+>3. redux 中间件
+>4. redux vuex 的区别
 
 ## 2. git subtree 管理源代码
 
@@ -39,11 +41,11 @@ TODO:
 
 对应命令则是：
 
-```sh
+```bash
 git subtree add --prefix=redux https://github.com/reduxjs/redux.git 4.x
 ```
 
-## 3. 调试 redux 源码
+## 3. 调试 redux 源码准备工作
 
 看源码调试很重要，所以我的每篇源码文章都详细描述（也许有人看来是比较啰嗦...）如何调试源码。
 
@@ -65,21 +67,21 @@ output: {
 
 安装依赖
 
-```sh
+```bash
 git clone http://github.com/lxchuan12/redux-analysis.git
 cd redux-analysi/redux
 npm i
 npm run build
-# 会生成sourcemap文件到`dist`等目录下。
+# 编译结束后会生成 sourcemap .map格式的文件到 dist、es、lib 目录下。
 ```
 
 仔细看看`redux/examples`目录和`redux/README`。
 
-这时我在根路径下，新建文件夹`examples`，把原生js写的计数器`redux/examples/counter-vanilla/index.html`，复制到`examples/index.html`。还有打包后的包含`sourcemap`的`dist`目录。
+这时我在根路径下，新建文件夹`examples`，把原生`js`写的计数器`redux/examples/counter-vanilla/index.html`，复制到`examples/index.html`。同时把打包后的包含`sourcemap`的`redux/dist`目录，复制到`examples/dist`目录。
 
 修改`index.html`的`script`的`redux.js`文件为`dist中的路径`。
 
-```sh
+```bash
 # redux-analysis 根目录
 # 安装启动服务的npm包
 npm i -g http-server
@@ -89,7 +91,7 @@ hs -p 5000
 
 就可以开心的调试啦。可以直接克隆我的项目`git clone http://github.com/lxchuan12/redux-analysis.git`。本地调试，动手实践，容易消化吸收。
 
-## 4. 调试简单计数器的例子
+## 4. 通过调试计数器例子的学习 redux 源码
 
 接着我们来看`examples/index.html`文件。先看`html`部分。只是写了几个 `button`，比较简单。
 
@@ -129,7 +131,6 @@ var valueEl = document.getElementById('value')
 function render() {
     valueEl.innerHTML = store.getState().toString()
 }
-
 render()
 store.subscribe(render)
 
@@ -212,7 +213,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
     function dispatch(action) {}
     function replaceReducer(nextReducer) {}
     function observable() {}
-    // ActionTypes.INIT @@redux/INITp.p.e.1.s.t
+    // ActionTypes.INIT @@redux/INITu.v.d.u.6.r
     dispatch({ type: ActionTypes.INIT })
     return {
         dispatch,
@@ -277,7 +278,6 @@ var store = Redux.createStore(counter)
 function render() {
     valueEl.innerHTML = store.getState().toString()
 }
-
 render()
 ```
 
@@ -352,6 +352,7 @@ function subscribe(listener) {
 
 到这里，我们就调试学习完了`Redux.createSotre`、`store.dispatch`、`store.getState`、`store.subscribe`的源码。
 
+```md
 ## TOP API
 
 ### createStore(reducer, [preloadedState], [enhancer])
@@ -373,6 +374,8 @@ function subscribe(listener) {
 ### subscribe(listener)
 
 ### replaceReducer(nextReducer)
+
+```
 
 ## vuex 和 redux 对比
 
