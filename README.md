@@ -27,7 +27,7 @@ TODO:
 >3. redux 中间件
 >4. redux vuex 的区别
 
-## 2. git subtree 管理源代码
+## 2. git subtree 管理子仓库
 
 写了很多源码文章，`vuex`、`axios`、`koa`等都是使用新的仓库克隆一份源码在自己仓库中。
 虽然电脑可以拉取最新代码，看到原作者的git信息。但上传到`github`后。读者却看不到原仓库作者的`git`信息了。于是我找到了`git submodules` 方案，但并不是很适合。再后来发现了`git subtree`。
@@ -37,7 +37,7 @@ TODO:
 
 具体可以查看这篇文章[@德来（原有赞大佬）：用 Git Subtree 在多个 Git 项目间双向同步子项目，附简明使用手册](https://segmentfault.com/a/1190000003969060)
 
-学会了`git subtree`后，我新建了`redux-analysis`项目后，把`redux`源码`4.x`（`master`分支是`ts`，文章中暂不想让一些不熟悉`ts`的读者看不懂）分支克隆到了我的项目里的一个子项目，得以保留`git`信息。
+学会了`git subtree`后，我新建了`redux-analysis`项目后，把`redux`源码`4.x`，（`4.x`分支最新版本是`4.0.5`，`master`分支是`ts`，文章中暂不想让一些不熟悉`ts`的读者看不懂）分支克隆到了我的项目里的一个子项目，得以保留`git`信息。
 
 对应命令则是：
 
@@ -255,7 +255,7 @@ function dispatch(action) {
         // 调用完后置为 false
       isDispatching = false
     }
-    //  把 
+    //  把 收集的函数拿出来依次调用
     const listeners = (currentListeners = nextListeners)
     for (let i = 0; i < listeners.length; i++) {
       const listener = listeners[i]
@@ -351,6 +351,17 @@ function subscribe(listener) {
 ```
 
 到这里，我们就调试学习完了`Redux.createSotre`、`store.dispatch`、`store.getState`、`store.subscribe`的源码。
+
+接下来，我们写个中间件例子，来调试中间件相关源码。
+
+## 5. Redux 中间件相关源码
+
+### 5.1 Redux.applyMiddleware(...middlewares)
+
+### 5.2 Redux.compose(...functions)
+
+
+
 
 ```md
 ## TOP API
