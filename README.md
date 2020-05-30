@@ -37,7 +37,7 @@ TODO:
 
 具体可以查看这篇文章[@德来（原有赞大佬）：用 Git Subtree 在多个 Git 项目间双向同步子项目，附简明使用手册](https://segmentfault.com/a/1190000003969060)
 
-学会了`git subtree`后，我新建了`redux-analysis`项目后，把`redux`源码`4.x`，（`4.x`分支最新版本是`4.0.5`，`master`分支是`ts`，文章中暂不想让一些不熟悉`ts`的读者看不懂）分支克隆到了我的项目里的一个子项目，得以保留`git`信息。
+学会了`git subtree`后，我新建了`redux-analysis`项目后，把`redux`源码`4.x`（`4.x`分支最新版本是`4.0.5`，`master`分支是`ts`，文章中暂不想让一些不熟悉`ts`的读者看不懂）分支克隆到了我的项目里的一个子项目，得以保留`git`信息。
 
 对应命令则是：
 
@@ -81,6 +81,8 @@ npm run build
 
 修改`index.html`的`script`的`redux.js`文件为`dist中的路径`。
 
+>为了便于区分和调试后续`html`文件，我把`index.html`重命名为`index.1.redux.getState.dispatch.html`。
+
 ```bash
 # redux-analysis 根目录
 # 安装启动服务的npm包
@@ -93,7 +95,7 @@ hs -p 5000
 
 ## 4. 通过调试计数器例子的学习 redux 源码
 
-接着我们来看`examples/index.html`文件。先看`html`部分。只是写了几个 `button`，比较简单。
+接着我们来看`examples/index.1.redux.getState.dispatch.html`文件。先看`html`部分。只是写了几个 `button`，比较简单。
 
 ```html
 <div>
