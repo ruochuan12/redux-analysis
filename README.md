@@ -412,7 +412,7 @@ cd redux-analysis && hs -p 5000
 # 上文说过npm i -g http-server
 ```
 
-打开`http://localhost:5000/examples/index.2.redux.applyMiddleware.compose.html`，按`F12`打开控制台，在以下语句打上断点。
+打开`http://localhost:5000/examples/index.2.redux.applyMiddleware.compose.html`，按`F12`打开控制台，在以下语句打上断点和一些你觉得重要的地方打上断点。
 
 ```js
 // examples/index.2.redux.applyMiddleware.compose.html
@@ -454,7 +454,10 @@ export default function applyMiddleware(...middlewares) {
 ```
 
 ```js
+// redux/src/createStore.js
 export default function createStore(reducer, preloadedState, enhancer) {
+  // 省略参数校验
+  // 如果第二个参数`preloadedState`是函数，并且第三个参数`enhancer`是undefined，把它们互换一下。
   if (typeof preloadedState === 'function' && typeof enhancer === 'undefined') {
     enhancer = preloadedState
     preloadedState = undefined
@@ -464,15 +467,64 @@ export default function createStore(reducer, preloadedState, enhancer) {
     if (typeof enhancer !== 'function') {
       throw new Error('Expected the enhancer to be a function.')
     }
-
+    // enhancer 也就是`Redux.applyMiddleware`返回的函数
+    // createStore 的 args 则是 `reducer, preloadedState`
+    /**
+     * createStore => (...args) => {
+            const store = createStore(...args)
+            return {
+              ...store,
+               dispatch,
+            }
+        }
+     ** /
+    // 最终返回增强的store对象。
     return enhancer(createStore)(reducer, preloadedState)
   }
+  // 省略后续代码
 }
 ```
+
+把接收的中间件函数`logger1`, `logger2`, `logger3`放入到 了`middlewares`数组中。`Redux.applyMiddleware`最后返回两层函数。
+把中间件函数都混入了参数`getState`和`dispatch`。
+
+```js
+// examples/index.2.redux.applyMiddleware.compose.html
+var store = Redux.createStore(counter, Redux.applyMiddleware(logger1, logger2,  logger3))
+```
+
+最后这句其实是返回一个增强了`dispatch`的`store`对象。
+
+而增强的`dispatch`函数，则是用`Redux.compose(...functions)`进行串联起来执行的。
 
 ### 5.2 Redux.compose(...functions)
 
 ```js
+export default function compose(...funcs) {
+  if (funcs.length === 0) {
+    return arg => arg
+  }
+
+  if (funcs.length === 1) {
+    return funcs[0]
+  }
+
+  return funcs.reduce((a, b) => (...args) => a(b(...args)))
+}
+```
+
+```js
+funcs.reduce((a, b) => (...args) => a(b(...args)))
+```
+
+这段可能不是那么好理解。我把箭头函数转换成普通函数。
+
+```js
+funcs.reduce(function(a, b){
+  return function(...args){
+    return a(b(...args));
+  };
+});
 ```
 
 ```md
