@@ -32,7 +32,7 @@ function logger2({ getState }) {
 
           // This will likely be the action itself, unless
           // a middleware further in chain changed it.
-          return returnValue 
+          return returnValue
       }
   }
 }
@@ -49,7 +49,7 @@ function logger3({ getState }) {
 
           // This will likely be the action itself, unless
           // a middleware further in chain changed it.
-          return returnValue 
+          return returnValue
       }
   }
 }
