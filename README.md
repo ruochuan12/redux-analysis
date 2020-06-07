@@ -360,12 +360,120 @@ function subscribe(listener) {
 
 ## 5. Redux 中间件相关源码
 
+中间件
+
 ### 5.1 Redux.applyMiddleware(...middlewares)
+
+#### 5.1.1 准备 logger 例子调试
+
+为了调试`Redux.applyMiddleware(...middlewares)`，我在`examples/js/middlewares.logger.example.js`写一个简单的`logger`例子。分别有三个`logger1`，`logger2`，`logger3`函数。都是类似，这里我只展示`logger1`、`logger2`函数。
+
+```js
+// examples/js/middlewares.logger.example.js
+function logger1({ getState }) {
+  return next => action => {
+      console.log('will dispatch--1--next, action:', next, action)
+
+      // Call the next dispatch method in the middleware chain.
+      const returnValue = next(action)
+
+      console.log('state after dispatch--1', getState())
+
+      // This will likely be the action itself, unless
+      // a middleware further in chain changed it.
+      return returnValue
+  }
+}
+function logger2({ getState }) {
+  return function (next){
+      return function (action){
+          console.log('will dispatch--2--next, action:', next, action)
+
+          // Call the next dispatch method in the middleware chain.
+          const returnValue = next(action)
+
+          console.log('state after dispatch--2', getState())
+
+          // This will likely be the action itself, unless
+          // a middleware further in chain changed it.
+          return returnValue
+      }
+  }
+}
+// 省略 logger3
+```
+
+`logger`中间件函数做的事情也比较简单，返回两层函数，`next`就是下一个中间件函数，调用返回结果。为了让读者能看懂，我把`logger1`用箭头函数、`logger2`则用普通函数。
+
+`写好例子后`，我们接着来看怎么调试`Redux.applyMiddleware(...middlewares))`源码。
+
+```bash
+cd redux-analysis && hs -p 5000
+# 上文说过npm i -g http-server
+```
+
+打开`http://localhost:5000/examples/index.2.redux.applyMiddleware.compose.html`，按`F12`打开控制台，在以下语句打上断点。
+
+```js
+// examples/index.2.redux.applyMiddleware.compose.html
+var store = Redux.createStore(counter, Redux.applyMiddleware(logger1, logger2,  logger3))
+```
+
+#### 5.1.2 Redux.applyMiddleware(...middlewares) 源码
+
+```js
+// redux/src/applyMiddleware.js
+/**
+ * ...
+ * @param {...Function} middlewares The middleware chain to be applied.
+ * @returns {Function} A store enhancer applying the middleware.
+ */
+export default function applyMiddleware(...middlewares) {
+  return createStore => (...args) => {
+    const store = createStore(...args)
+    let dispatch = () => {
+      throw new Error(
+        'Dispatching while constructing your middleware is not allowed. ' +
+          'Other middleware would not be applied to this dispatch.'
+      )
+    }
+
+    const middlewareAPI = {
+      getState: store.getState,
+      dispatch: (...args) => dispatch(...args)
+    }
+    const chain = middlewares.map(middleware => middleware(middlewareAPI))
+    dispatch = compose(...chain)(store.dispatch)
+
+    return {
+      ...store,
+      dispatch
+    }
+  }
+}
+```
+
+```js
+export default function createStore(reducer, preloadedState, enhancer) {
+  if (typeof preloadedState === 'function' && typeof enhancer === 'undefined') {
+    enhancer = preloadedState
+    preloadedState = undefined
+  }
+
+  if (typeof enhancer !== 'undefined') {
+    if (typeof enhancer !== 'function') {
+      throw new Error('Expected the enhancer to be a function.')
+    }
+
+    return enhancer(createStore)(reducer, preloadedState)
+  }
+}
+```
 
 ### 5.2 Redux.compose(...functions)
 
-
-
+```js
+```
 
 ```md
 ## TOP API
