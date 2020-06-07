@@ -414,6 +414,10 @@ cd redux-analysis && hs -p 5000
 
 打开`http://localhost:5000/examples/index.2.redux.applyMiddleware.compose.html`，按`F12`打开控制台，在以下语句打上断点和一些你觉得重要的地方打上断点。
 
+>**断点调试要领：**<br>
+**赋值语句可以一步按(F10)跳过，看返回值即可，后续详细再看。**<br>
+**函数执行需要断点跟着看，也可以结合注释和上下文倒推这个函数做了什么。**<br>
+
 ```js
 // examples/index.2.redux.applyMiddleware.compose.html
 var store = Redux.createStore(counter, Redux.applyMiddleware(logger1, logger2,  logger3))
@@ -514,10 +518,13 @@ export default function compose(...funcs) {
 ```
 
 ```js
+// applyMiddleware.js
+dispatch = compose(...chain)(store.dispatch)
+// compose
 funcs.reduce((a, b) => (...args) => a(b(...args)))
 ```
 
-这段可能不是那么好理解。我把箭头函数转换成普通函数。
+这两句可能不是那么好理解，可以断点多调试几次。我把箭头函数转换成普通函数。
 
 ```js
 funcs.reduce(function(a, b){
@@ -525,6 +532,37 @@ funcs.reduce(function(a, b){
     return a(b(...args));
   };
 });
+```
+
+```js
+funcs
+[(next) =>  action => {
+      console.log('will dispatch--1--next, action:', next, action)
+
+      // Call the next dispatch method in the middleware chain.
+      const returnValue = next(action)
+
+      console.log('state after dispatch--1', getState())
+
+      // This will likely be the action itself, unless
+      // a middleware further in chain changed it.
+      return returnValue
+}, function(next){
+      return function (action){
+          console.log('will dispatch--2--next, action:', next, action)
+
+          // Call the next dispatch method in the middleware chain.
+          const returnValue = next(action)
+
+          console.log('state after dispatch--2', getState())
+
+          // This will likely be the action itself, unless
+          // a middleware further in chain changed it.
+          return returnValue
+      }
+}, function(next){
+  
+}]
 ```
 
 ```md
