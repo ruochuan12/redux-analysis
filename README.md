@@ -29,6 +29,10 @@ TODO:
 >3. redux 中间件
 >4. redux vuex 的区别
 
+**本文阅读最佳方式**
+
+把它`git clone https://github.com/lxchuan12/redux-analysis.git`克隆下来，顺便`star`一下[我的redux源码学习仓库](https://github.com/lxchuan12/redux-analysis)^_^。**跟着文章节奏调试和示例代码调试，用`chrome`动手调试印象更加深刻**。文章长段代码不用细看，可以调试时再细看。看这类源码文章百遍，可能不如自己多调试几遍。也欢迎加我微信交流`ruochuan12`。
+
 ## 2. git subtree 管理子仓库
 
 写了很多源码文章，`vuex`、`axios`、`koa`等都是使用新的仓库克隆一份源码在自己仓库中。
