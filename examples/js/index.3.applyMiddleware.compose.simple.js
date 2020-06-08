@@ -44,3 +44,5 @@ function applyMiddleware(...middlewares){
       dispatch
     }
 }
+    
+var store = applyMiddleware(logger1, logger2, logger3);
