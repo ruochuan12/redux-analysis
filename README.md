@@ -31,7 +31,7 @@ TODO:
 
 **本文阅读最佳方式**
 
-把它`git clone https://github.com/lxchuan12/redux-analysis.git`克隆下来，顺便`star`一下[我的redux源码学习仓库](https://github.com/lxchuan12/redux-analysis)^_^。**跟着文章节奏调试和示例代码调试，用`chrome`动手调试印象更加深刻**。文章长段代码不用细看，可以调试时再细看。看这类源码文章百遍，可能不如自己多调试几遍。也欢迎加我微信交流`ruochuan12`。
+把我的`redux`源码仓库 `git clone https://github.com/lxchuan12/redux-analysis.git`克隆下来，顺便`star`一下[我的redux源码学习仓库](https://github.com/lxchuan12/redux-analysis)^_^。**跟着文章节奏调试和示例代码调试，用`chrome`动手调试印象更加深刻**。文章长段代码不用细看，可以调试时再细看。看这类源码文章百遍，可能不如自己多调试几遍。也欢迎加我微信交流`ruochuan12`。
 
 ## 2. git subtree 管理子仓库
 
@@ -54,6 +54,10 @@ git subtree add --prefix=redux https://github.com/reduxjs/redux.git 4.x
 ## 3. 调试 redux 源码准备工作
 
 看源码调试很重要，所以我的每篇源码文章都详细描述（也许有人看来是比较啰嗦...）如何调试源码。
+
+调试源码前，先简单看看 redux的工作流程，有个大概印象。
+
+![redux 工作流程](./images/redux-workflow.png)
 
 ### 3.1 rollup 生成 sourcemap 便于调试
 
@@ -710,8 +714,9 @@ export default function bindActionCreators(actionCreators, dispatch) {
 ## 推荐阅读
 
 [@胡子大哈：动手实现 Redux（一）：优雅地修改共享状态](http://huziketang.mangojuice.top/books/react/lesson30)，总共6小节，非常推荐，虽然我很早前就看完了《react小书》，现在再看一遍又有收获<br>
-[redux 英文文档](https://redux.js.org)<br>
+[美团@莹莹 Redux从设计到源码](https://tech.meituan.com/2017/07/14/redux-design-code.html)
 [redux 中文文档](https://www.redux.org.cn/)<br>
+[redux 英文文档](https://redux.js.org)<br>
 [Redux源码分析(1) - Redux介绍及使用](https://blog.csdn.net/zcs425171513/article/details/105619754)<br>
 [若川的学习redux源码仓库](http://github.com/lxchuan12/redux-analysis.git)
 
