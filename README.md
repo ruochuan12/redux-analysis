@@ -366,7 +366,7 @@ function subscribe(listener) {
 
 #### 5.1.1 准备 logger 例子调试
 
-为了调试`Redux.applyMiddleware(...middlewares)`，我在`examples/js/middlewares.logger.example.js`写一个简单的`logger`例子。分别有三个`logger1`，`logger2`，`logger3`函数。都是类似，这里我只展示`logger1`、`logger2`函数。
+为了调试`Redux.applyMiddleware(...middlewares)`，我在`examples/js/middlewares.logger.example.js`写一个简单的`logger`例子。分别有三个`logger1`，`logger2`，`logger3`函数。由于都是类似，所以我在这里只展示`logger1`函数。
 
 ```js
 // examples/js/middlewares.logger.example.js
@@ -384,23 +384,7 @@ function logger1({ getState }) {
       return returnValue
   }
 }
-function logger2({ getState }) {
-  return function (next){
-      return function (action){
-          console.log('will dispatch--2--next, action:', next, action)
-
-          // Call the next dispatch method in the middleware chain.
-          const returnValue = next(action)
-
-          console.log('state after dispatch--2', getState())
-
-          // This will likely be the action itself, unless
-          // a middleware further in chain changed it.
-          return returnValue
-      }
-  }
-}
-// 省略 logger3
+// 省略 logger2、logger3
 ```
 
 `logger`中间件函数做的事情也比较简单，返回两层函数，`next`就是下一个中间件函数，调用返回结果。为了让读者能看懂，我把`logger1`用箭头函数、`logger2`则用普通函数。
@@ -565,6 +549,115 @@ funcs
 }]
 ```
 
+## 6. Redux.combineReducers(reducers)
+
+合并`reducer`
+
+```js
+export default function combineReducers(reducers) {
+  const reducerKeys = Object.keys(reducers)
+  const finalReducers = {}
+  for (let i = 0; i < reducerKeys.length; i++) {
+    const key = reducerKeys[i]
+
+    if (process.env.NODE_ENV !== 'production') {
+      if (typeof reducers[key] === 'undefined') {
+        warning(`No reducer provided for key "${key}"`)
+      }
+    }
+
+    if (typeof reducers[key] === 'function') {
+      finalReducers[key] = reducers[key]
+    }
+  }
+  const finalReducerKeys = Object.keys(finalReducers)
+
+  // This is used to make sure we don't warn about the same
+  // keys multiple times.
+  let unexpectedKeyCache
+  if (process.env.NODE_ENV !== 'production') {
+    unexpectedKeyCache = {}
+  }
+
+  let shapeAssertionError
+  try {
+    assertReducerShape(finalReducers)
+  } catch (e) {
+    shapeAssertionError = e
+  }
+
+  return function combination(state = {}, action) {
+    if (shapeAssertionError) {
+      throw shapeAssertionError
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      const warningMessage = getUnexpectedStateShapeWarningMessage(
+        state,
+        finalReducers,
+        action,
+        unexpectedKeyCache
+      )
+      if (warningMessage) {
+        warning(warningMessage)
+      }
+    }
+
+    let hasChanged = false
+    const nextState = {}
+    for (let i = 0; i < finalReducerKeys.length; i++) {
+      const key = finalReducerKeys[i]
+      const reducer = finalReducers[key]
+      const previousStateForKey = state[key]
+      const nextStateForKey = reducer(previousStateForKey, action)
+      if (typeof nextStateForKey === 'undefined') {
+        const errorMessage = getUndefinedStateErrorMessage(key, action)
+        throw new Error(errorMessage)
+      }
+      nextState[key] = nextStateForKey
+      hasChanged = hasChanged || nextStateForKey !== previousStateForKey
+    }
+    hasChanged =
+      hasChanged || finalReducerKeys.length !== Object.keys(state).length
+    return hasChanged ? nextState : state
+  }
+}
+```
+
+## 7. Redux.bindActionCreators(actionCreators, dispatch)
+
+```js
+function bindActionCreator(actionCreator, dispatch) {
+  return function() {
+    return dispatch(actionCreator.apply(this, arguments))
+  }
+}
+
+export default function bindActionCreators(actionCreators, dispatch) {
+  if (typeof actionCreators === 'function') {
+    return bindActionCreator(actionCreators, dispatch)
+  }
+
+  if (typeof actionCreators !== 'object' || actionCreators === null) {
+    throw new Error(
+      `bindActionCreators expected an object or a function, instead received ${
+        actionCreators === null ? 'null' : typeof actionCreators
+      }. ` +
+        `Did you write "import ActionCreators from" instead of "import * as ActionCreators from"?`
+    )
+  }
+
+  const boundActionCreators = {}
+  for (const key in actionCreators) {
+    const actionCreator = actionCreators[key]
+    if (typeof actionCreator === 'function') {
+      boundActionCreators[key] = bindActionCreator(actionCreator, dispatch)
+    }
+  }
+  return boundActionCreators
+}
+```
+
 ```md
 ## TOP API
 
@@ -590,21 +683,25 @@ funcs
 
 ```
 
-## vuex 和 redux 对比
+`redux`所提供的的`API` 除了`store.replaceReducer(nextReducer)`没分析，其他都分析了。
 
-构造函数
+## 8. vuex 和 redux 简单对比
 
-函数式编程、闭包
+### 8.1 源码实现形式
 
-### vuex 只能用于 vue vs redux 可以用于其他项目 比如小程序、jQuery等
+从源码实现上来看，`vuex`源码主要使用了构造函数，而`redux`则是多用函数式编程、闭包。
 
-### vuex 插件 vs redux 中间件
+### 8.2 耦合度
 
-## 中心思想是什么
+`vuex` 与 `vue` 强耦合，脱离了`vue`则无法使用。而`redux`跟`react`没有关系，所以它可以使用于小程序或者`jQuery`等。如果需要和`react`使用，还需要结合`react-redux`库。
+
+### 8.3 扩展
+
+`vuex`实现扩展则是使用插件形式，而`redux`是中间件的形式。
+
+## 9. 总结 中心思想是什么
 
 小时候语文课本习题经常问文章的中心思想是什么。
-
-闭包。
 
 ## 推荐阅读
 
