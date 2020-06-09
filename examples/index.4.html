@@ -17,6 +17,19 @@
     <script src="./js/index.4.bindActionCreators.combineReducers.example.js"></script>
     <script>
       var store = Redux.createStore(reducer)
+      
+      const actionCreators = {
+          'INCREMENT': function(){
+              return {
+                  type: 'INCREMENT',
+              };
+          },
+          'DECREMENT': function(){
+              return {
+                  type: 'DECREMENT',
+              };
+          }
+      }
 
       const boundActionCreators = Redux.bindActionCreators(actionCreators, store.dispatch)
       console.log('boundActionCreators:', boundActionCreators)

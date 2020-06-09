@@ -27,19 +27,6 @@ function todos(state, action) {
       }
 }
 
-const actionCreators = {
-    'INCREMENT': function(){
-        return {
-            type: 'INCREMENT',
-        };
-    },
-    'DECREMENT': function(){
-        return {
-            type: 'DECREMENT',
-        };
-    }
-}
-
 const reducer = Redux.combineReducers({
     todos,
     counter
