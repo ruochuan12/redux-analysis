@@ -177,18 +177,18 @@ store.dispatch({ type: 'INCREMENT' })
 
 可以看到`Redux`上有好几个方法。分别是：
 - __DO_NOT_USE__ActionTypes: {INIT: "@@redux/INITu.v.d.u.6.r", REPLACE: "@@redux/REPLACEg.u.u.7.c", PROBE_UNKNOWN_ACTION: ƒ}
-- applyMiddleware: ƒ applyMiddleware()
-- bindActionCreators: ƒ bindActionCreators(actionCreators, dispatch)
-- combineReducers: ƒ combineReducers(reducers)
-- compose: ƒ compose()
-- createStore: ƒ createStore(reducer, preloadedState, enhancer)
+- applyMiddleware: ƒ applyMiddleware() 函数是一个增强器，组合多个中间件，最终增强`store.dispatch`函数，`dispatch`时，可以串联执行所有中间件。
+- bindActionCreators: ƒ bindActionCreators(actionCreators, dispatch) 生成actions，主要用于其他库，比如`react-redux`。
+- combineReducers: ƒ combineReducers(reducers) 组合多个`reducers`，返回一个总的`reducer`函数。
+- compose: ƒ compose() 组合多个函数，从右到左，比如：compose(f, g, h) 最终得到这个结果 (...args) => f(g(h(...args))).
+- createStore: ƒ createStore(reducer, preloadedState, enhancer) 生成 `store` 对象
 
 再看`store`也有几个方法。分别是：
 
-- dispatch: ƒ dispatch(action)
-- subscribe: ƒ subscribe(listener)
-- getState: ƒ getState()
-- replaceReducer: ƒ replaceReducer(nextReducer)
+- dispatch: ƒ dispatch(action)  派发动作，也就是把`subscribe`收集的函数，依次遍历执行
+- subscribe: ƒ subscribe(listener) 订阅收集函数存在数组中，等待触发`dispatch`依次执行。返回一个取消订阅的函数，可以取消订阅监听。
+- getState: ƒ getState() 获取存在`createStore`函数内部闭包的对象。
+- replaceReducer: ƒ replaceReducer(nextReducer) 主要用于`redux`开发者工具，对比当前和上一次操作的异同。有点类似时间穿梭功能。
 - Symbol(observable): ƒ observable()
 
 也就是[官方文档redux.org.js](https://redux.org.js)上的 `API`。
@@ -599,17 +599,7 @@ export default function combineReducers(reducers) {
       throw shapeAssertionError
     }
 
-    if (process.env.NODE_ENV !== 'production') {
-      const warningMessage = getUnexpectedStateShapeWarningMessage(
-        state,
-        finalReducers,
-        action,
-        unexpectedKeyCache
-      )
-      if (warningMessage) {
-        warning(warningMessage)
-      }
-    }
+    // ... 省略开发环境的一些判断
 
     let hasChanged = false
     const nextState = {}
@@ -705,7 +695,7 @@ export default function bindActionCreators(actionCreators, dispatch) {
 
 ### 8.3 扩展
 
-`vuex`实现扩展则是使用插件形式，而`redux`是中间件的形式。
+`vuex`实现扩展则是使用插件形式，而`redux`是中间件的形式。`redux`的中间件则是AOP（面向切面编程）。
 
 ## 9. 总结 中心思想是什么
 
@@ -714,7 +704,7 @@ export default function bindActionCreators(actionCreators, dispatch) {
 ## 推荐阅读
 
 [@胡子大哈：动手实现 Redux（一）：优雅地修改共享状态](http://huziketang.mangojuice.top/books/react/lesson30)，总共6小节，非常推荐，虽然我很早前就看完了《react小书》，现在再看一遍又有收获<br>
-[美团@莹莹 Redux从设计到源码](https://tech.meituan.com/2017/07/14/redux-design-code.html)
+[美团@莹莹 Redux从设计到源码](https://tech.meituan.com/2017/07/14/redux-design-code.html)<br>
 [redux 中文文档](https://www.redux.org.cn/)<br>
 [redux 英文文档](https://redux.js.org)<br>
 [Redux源码分析(1) - Redux介绍及使用](https://blog.csdn.net/zcs425171513/article/details/105619754)<br>
