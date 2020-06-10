@@ -24,10 +24,10 @@
 TODO:
 阅读本文你将学到：
 
->1. git subtree 管理子仓库
->2. 如何学习 redux 源码
->3. redux 中间件
->4. redux vuex 的区别
+>1. `git subtree` 管理子仓库
+>2. 如何学习 `redux` 源码
+>3. `redux` 中间件
+>4. `vuex` 和 `redux`  的对比
 
 **本文阅读最佳方式**
 
@@ -53,9 +53,16 @@ git subtree add --prefix=redux https://github.com/reduxjs/redux.git 4.x
 
 ## 3. 调试 redux 源码准备工作
 
+之前，我在知乎回答了一个问题[若川：一年内的前端看不懂前端框架源码怎么办？](https://www.zhihu.com/question/350289336/answer/910970733)
+推荐了一些资料，阅读量还不错，大家有兴趣可以看看。主要有四点：<br>
+>1.借助调试<br>
+>2.搜索查阅相关高赞文章<br>
+>3.把不懂的地方记录下来，查阅相关文档<br>
+>4.总结<br>
+
 看源码调试很重要，所以我的每篇源码文章都详细描述（也许有人看来是比较啰嗦...）如何调试源码。
 
-调试源码前，先简单看看 redux的工作流程，有个大概印象。
+调试源码前，先简单看看 `redux` 的工作流程，有个大概印象。
 
 ![redux 工作流程](./images/redux-workflow.png)
 
@@ -404,7 +411,16 @@ cd redux-analysis && hs -p 5000
 # 上文说过npm i -g http-server
 ```
 
-打开`http://localhost:5000/examples/index.2.redux.applyMiddleware.compose.html`，按`F12`打开控制台，在以下语句打上断点和一些你觉得重要的地方打上断点。
+打开`http://localhost:5000/examples/index.2.redux.applyMiddleware.compose.html`，按`F12`打开控制台，
+
+先点击加号操作+1，把结果展示出来。
+![redux 中间件调试图](./images/redux-middlewares.png)
+从图中可以看出，`next`则是下一个函数。先1-2-3，再3-2-1这样的顺序。
+
+这种也就是我们常说的中间件，面向切面编程（AOP）。
+![中间件图解](./images/middleware.png)
+
+接下来调试，在以下语句打上断点和一些你觉得重要的地方打上断点。
 
 >**断点调试要领：**<br>
 **赋值语句可以一步按(F10)跳过，看返回值即可，后续详细再看。**<br>
@@ -526,6 +542,8 @@ funcs.reduce(function(a, b){
 });
 ```
 
+其实`redux`源码中注释很清晰了，这个`compose`函数上方有一堆注释，其中有一句：组合多个函数，从右到左，比如：`compose(f, g, h)` 最终得到这个结果 `(...args) => f(g(h(...args)))`.
+
 ```js
 funcs
 [(next) =>  action => {
@@ -636,14 +654,7 @@ export default function bindActionCreators(actionCreators, dispatch) {
     return bindActionCreator(actionCreators, dispatch)
   }
 
-  if (typeof actionCreators !== 'object' || actionCreators === null) {
-    throw new Error(
-      `bindActionCreators expected an object or a function, instead received ${
-        actionCreators === null ? 'null' : typeof actionCreators
-      }. ` +
-        `Did you write "import ActionCreators from" instead of "import * as ActionCreators from"?`
-    )
-  }
+  // ... 省略一些容错判断
 
   const boundActionCreators = {}
   for (const key in actionCreators) {
@@ -654,31 +665,6 @@ export default function bindActionCreators(actionCreators, dispatch) {
   }
   return boundActionCreators
 }
-```
-
-```md
-## TOP API
-
-### createStore(reducer, [preloadedState], [enhancer])
-
-### combineReducers(reducers)
-
-### applyMiddleware(...middlewares)
-
-### bindActionCreators(actionCreators, dispatch)
-
-### compose(...functions)
-
-## Store
-
-### getState()
-
-### dispatch(action)
-
-### subscribe(listener)
-
-### replaceReducer(nextReducer)
-
 ```
 
 `redux`所提供的的`API` 除了`store.replaceReducer(nextReducer)`没分析，其他都分析了。
@@ -695,16 +681,20 @@ export default function bindActionCreators(actionCreators, dispatch) {
 
 ### 8.3 扩展
 
-`vuex`实现扩展则是使用插件形式，而`redux`是中间件的形式。`redux`的中间件则是AOP（面向切面编程）。
+`vuex`实现扩展则是使用插件形式，而`redux`是中间件的形式。`redux`的中间件则是AOP（面向切面编程），`redux`中`Redux.applyMiddleware()`其实也是一个增强函数，所以也可以用户来实现增强器，所以[`redux`生态](https://www.redux.org.cn/docs/introduction/Ecosystem.html)比较繁荣。
 
 ## 9. 总结 中心思想是什么
 
 小时候语文课本习题经常问文章的中心思想是什么。
 
+文章主要通过一步步调试的方式循序渐进地讲述`redux`源码的具体实现。旨在教会读者调试源码，不惧怕源码。
+
+最后再来看张![`redux`工作流程图](./images/redux-workflow-gif.png)，是不是就更理解些了呢。
+
 ## 推荐阅读
 
 [@胡子大哈：动手实现 Redux（一）：优雅地修改共享状态](http://huziketang.mangojuice.top/books/react/lesson30)，总共6小节，非常推荐，虽然我很早前就看完了《react小书》，现在再看一遍又有收获<br>
-[美团@莹莹 Redux从设计到源码](https://tech.meituan.com/2017/07/14/redux-design-code.html)<br>
+[美团@莹莹 Redux从设计到源码](https://tech.meituan.com/2017/07/14/redux-design-code.html)，美团这篇是我基本写完文章后看到的，感觉写得很好，非常推荐<br>
 [redux 中文文档](https://www.redux.org.cn/)<br>
 [redux 英文文档](https://redux.js.org)<br>
 [Redux源码分析(1) - Redux介绍及使用](https://blog.csdn.net/zcs425171513/article/details/105619754)<br>
@@ -733,3 +723,13 @@ export default function bindActionCreators(actionCreators, dispatch) {
 可能比较有趣的微信公众号，长按扫码关注（**回复pdf获取前端优质书籍pdf**）。欢迎加我微信`ruochuan12`（注明来源，基本来者不拒），拉您进【前端视野交流群】，长期交流学习~
 
 ![若川视野](https://github.com/lxchuan12/blog/raw/master/docs/about/wechat-official-accounts-mini.jpg)
+
+TODO:
+
+相对详细的介绍
+
+- [ ] compose
+- [ ] bindActionCreator
+- [ ] combine
+- [ ] vuex 和 redux 对比
+- [ ] 总结
