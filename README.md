@@ -544,6 +544,126 @@ funcs.reduce(function(a, b){
 
 其实`redux`源码中注释很清晰了，这个`compose`函数上方有一堆注释，其中有一句：组合多个函数，从右到左，比如：`compose(f, g, h)` 最终得到这个结果 `(...args) => f(g(h(...args)))`.
 
+#### 5.2.1 compose 函数演化
+
+看`Redux.compose(...functions)`函数源码后，还是不明白，不要急不要慌，吃完鸡蛋还有汤。仔细来看如何演化而来，先来简单看下如下需求。
+
+传入一个数值，计算数值乘以10再加上10，再减去2。
+
+实现起来很简单。
+
+```js
+const calc = (num) => num * 10 + 10 - 2;
+calc(10); // 108
+```
+
+但这样写有个问题，不好扩展，比如我想乘以`10`时就打印出结果。
+为了便于扩展，我们分开写成三个函数。
+
+```js
+const multiply = (x) => {
+   const result = x * 10;
+   console.log(result);
+   return result;
+};
+const add = (y) => y + 10;
+const minus = (z) => z - 2;
+
+// 计算结果
+console.log(minus(add(multiply(10))));
+// 100
+// 108
+// 这样我们就把三个函数计算结果出来了。
+```
+
+再来实现一个相对通用的函数，计算这三个函数的结果。
+
+```js
+const compose = (f, g, h) => {
+  return function(x){
+    return f(g(h(x)));
+  }
+}
+const calc = compose(minus, add, multiply);
+console.log(calc(10));
+// 100
+// 108
+```
+
+这样还是有问题，只支持三个函数。我想支持多个函数。
+我们了解到数组的`reduce`方法就能实现这样的功能。
+前一个函数
+
+```js
+// 我们常用reduce来计算数值数组的总和
+[1,2,3,4,5].reduce((pre, item, index, arr) => {
+  console.log('(pre, item, index, arr)', pre, item, index, arr);
+  // (pre, item, index, arr) 1 2 1 (5) [1, 2, 3, 4, 5]
+  // (pre, item, index, arr) 3 3 2 (5) [1, 2, 3, 4, 5]
+  // (pre, item, index, arr) 6 4 3 (5) [1, 2, 3, 4, 5]
+  // (pre, item, index, arr) 10 5 4 (5) [1, 2, 3, 4, 5]
+  return pre + item;
+});
+// 15
+```
+
+我们把数组`[1,2,3,4,5]`转成函数`[fn1,fn2,fn3,fn4,fn5]`
+
+```js
+function fn1() {
+    console.log(1);
+    return 1;
+}
+
+function fn2() {
+    console.log(2);
+    return 2;
+}
+
+function fn3() {
+    console.log(3);
+    return 3;
+}
+
+function fn4() {
+    console.log(4);
+    return 4;
+}
+
+function fn5() {
+    console.log(5);
+    return 5;
+}
+const compose = (...funcs) => {
+    return funcs.reduce((preA, itemB) => {
+        return function (...args) {
+            return preA(itemB(...args));
+        }
+    });
+}
+function dispatch(action){
+    console.log('action:', action);
+}
+compose(fn1, fn2, fn3, fn4, fn5)(dispatch);
+dispatch({type: '若川'});
+```
+
+```js
+const compose = (...arr) => {
+  return arr.reduce((pre, item, index, arr) => {
+    return function(x){
+      return pre + item;
+    }
+  });
+}
+compose(1,2,3,4,5);
+[1,2,3,4,5].reduce((pre, item, index, arr) => {
+  return function(x){
+    return pre + item;
+  }
+});
+```
+
 ```js
 funcs
 [(next) =>  action => {
@@ -683,13 +803,17 @@ export default function bindActionCreators(actionCreators, dispatch) {
 
 `vuex`实现扩展则是使用插件形式，而`redux`是中间件的形式。`redux`的中间件则是AOP（面向切面编程），`redux`中`Redux.applyMiddleware()`其实也是一个增强函数，所以也可以用户来实现增强器，所以[`redux`生态](https://www.redux.org.cn/docs/introduction/Ecosystem.html)比较繁荣。
 
+### 8.4 上手难易度
+
+相对来说，`vuex`上手相对简单，`redux`相对难一些，`redux`涉及到一些函数式编程、高阶函数、纯函数等概念。
+
 ## 9. 总结 中心思想是什么
 
 小时候语文课本习题经常问文章的中心思想是什么。
 
 文章主要通过一步步调试的方式循序渐进地讲述`redux`源码的具体实现。旨在教会读者调试源码，不惧怕源码。
 
-最后再来看张![`redux`工作流程图](./images/redux-workflow-gif.png)，是不是就更理解些了呢。
+最后再来看张`redux`工作流程图 ![`redux`工作流程图](./images/redux-workflow-gif.png)是不是就更理解些了呢。
 
 ## 推荐阅读
 
