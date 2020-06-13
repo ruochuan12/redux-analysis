@@ -43,7 +43,7 @@ TODO:
 
 具体可以查看这篇文章[@德来（原有赞大佬）：用 Git Subtree 在多个 Git 项目间双向同步子项目，附简明使用手册](https://segmentfault.com/a/1190000003969060)
 
-学会了`git subtree`后，我新建了`redux-analysis`项目后，把`redux`源码`4.x`（`4.x`分支最新版本是`4.0.5`，`master`分支是`ts`，文章中暂不想让一些不熟悉`ts`的读者看不懂）分支克隆到了我的项目里的一个子项目，得以保留`git`信息。
+学会了`git subtree`后，我新建了`redux-analysis`项目后，把`redux`源码`4.x`（截止至2020年06月13日，`4.x`分支最新版本是`4.0.5`，`master`分支是`ts`，文章中暂不想让一些不熟悉`ts`的读者看不懂）分支克隆到了我的项目里的一个子项目，得以保留`git`信息。
 
 对应命令则是：
 
@@ -62,6 +62,12 @@ git subtree add --prefix=redux https://github.com/reduxjs/redux.git 4.x
 
 看源码调试很重要，所以我的每篇源码文章都详细描述（也许有人看来是比较啰嗦...）如何调试源码。
 
+>**断点调试要领：**<br>
+**赋值语句可以一步按`F10`跳过，看返回值即可，后续详细再看。**<br>
+**函数执行需要断点按`F11`跟着看，也可以结合注释和上下文倒推这个函数做了什么。**<br>
+**有些不需要细看的，直接按`F8`走向下一个断点**<br>
+**刷新重新调试按`F5`**<br>
+
 调试源码前，先简单看看 `redux` 的工作流程，有个大概印象。
 
 ![redux 工作流程](./images/redux-workflow.png)
@@ -71,7 +77,7 @@ git subtree add --prefix=redux https://github.com/reduxjs/redux.git 4.x
 修改`rollup.config.js`文件，`output`输出的配置生成`sourcemap`。
 
 ```js
-// rollup.config.js 有些省略
+// redux/rollup.config.js 有些省略
 const sourcemap = {
   sourcemap: true,
 };
@@ -179,6 +185,8 @@ store.dispatch({ type: 'INCREMENT' })
 ```
 
 ![redux debugger图](./images/redux-debugger.png)
+
+图中的右边`Scope`，有时需要关注下，会显示闭包、全局环境、当前环境等变量，还可以显示函数等具体代码位置，能帮助自己理解代码。
 
 断点调试，按`F5`刷新页面后，按`F8`，把鼠标放在`Redux`和`store`上。
 
@@ -375,7 +383,7 @@ function subscribe(listener) {
 
 ## 5. Redux 中间件相关源码
 
-中间件
+中间件是重点，面试官也经常问这类问题。
 
 ### 5.1 Redux.applyMiddleware(...middlewares)
 
@@ -421,10 +429,6 @@ cd redux-analysis && hs -p 5000
 ![中间件图解](./images/middleware.png)
 
 接下来调试，在以下语句打上断点和一些你觉得重要的地方打上断点。
-
->**断点调试要领：**<br>
-**赋值语句可以一步按(F10)跳过，看返回值即可，后续详细再看。**<br>
-**函数执行需要断点跟着看，也可以结合注释和上下文倒推这个函数做了什么。**<br>
 
 ```js
 // examples/index.2.redux.applyMiddleware.compose.html
@@ -607,6 +611,20 @@ console.log(calc(10));
 // 15
 ```
 
+```js
+const compose = (...func) => {
+  return func.reduce((a, b) => {
+    return function(x){
+      return a(b(x));
+    }
+  })
+}
+const calc = compose(minus, add, multiply);
+console.log(calc(10));
+// 100
+// 108
+```
+
 我们把数组`[1,2,3,4,5]`转成函数`[fn1,fn2,fn3,fn4,fn5]`
 
 ```js
@@ -635,9 +653,9 @@ function fn5() {
     return 5;
 }
 const compose = (...funcs) => {
-    return funcs.reduce((preA, itemB) => {
+    return funcs.reduce((preFnA, itemFnB) => {
         return function (...args) {
-            return preA(itemB(...args));
+            return preFnA(itemFnB(...args));
         }
     });
 }
