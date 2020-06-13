@@ -12,17 +12,25 @@ function compose(...funcs) {
     if (funcs.length === 1) {
       return funcs[0]
     }
-  
-    return funcs.reduce((a, b) => (...args) => a(b(...args)))
+    // 原来的源代码
+    // return funcs.reduce((a, b) => (...args) => a(b(...args)))
+    // 我改成普通函数便于理解
+    return funcs.reduce(function(preFnA, itemFnB){
+      return function (...args) {
+          return preFnA(itemFnB(...args));
+      }
+  });
 }
 
 function applyMiddleware(...middlewares){
     const store = {  
         getState: function(){
             console.log('getState');
+            return 0;
         },
         dispatch: function(action){
             console.log('dispatch---action', action);
+            return action;
         }
     }
     let dispatch = () => {

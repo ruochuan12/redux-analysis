@@ -8,43 +8,74 @@
 </head>
 
 <body>
+    <script src="../js/middlewares.logger.example.js"></script>
     <script>
-        function fn1() {
+        function fn1(next) {
             console.log(1);
-            return 1;
+            return function(action){
+                console.log('will dispatch --- next----action----1', next, action);
+                const returnValue = next(action)
+                console.log('after dispatch --- next----action----1');
+                return returnValue;
+            };
         }
 
-        function fn2() {
+        function fn2(next) {
             console.log(2);
-            return 2;
+            return function(action){
+                console.log('will dispatch --- next----action----2', next, action);
+                const returnValue = next(action)
+                console.log('after dispatch --- next----action----2');
+                return returnValue;
+            };
         }
 
-        function fn3() {
+        function fn3(next) {
             console.log(3);
-            return 3;
+            return function(action){
+                console.log('will dispatch --- next----action----3', next, action);
+                const returnValue = next(action)
+                console.log('after dispatch --- next----action----3');
+                return returnValue;
+            };
         }
 
-        function fn4() {
+        function fn4(next) {
             console.log(4);
-            return 4;
+            return function(action){
+                console.log('will dispatch --- next----action----4', next, action);
+                const returnValue = next(action)
+                console.log('after dispatch --- next----action----4');
+                return returnValue;
+            };
         }
 
-        function fn5() {
+        function fn5(next) {
             console.log(5);
-            return 5;
+            return function(action){
+                console.log('will dispatch --- next----action----5', next, action);
+                const returnValue = next(action)
+                console.log('after dispatch --- next----action----5');
+                return returnValue;
+            };
         }
         const compose = (...funcs) => {
-            return funcs.reduce((preA, itemB) => {
+            return funcs.reduce(function(preFnA, itemFnB, index){
                 return function (...args) {
-                    return preA(itemB(...args));
+                    console.log('--------preFnA----------' + index, preFnA);
+                    console.log('--------itemFnB--------' + index, itemFnB.name);
+                    return preFnA(itemFnB(...args));
                 }
             });
         }
         function dispatch(action){
             console.log('action:', action);
+            return action;
         }
-        compose(fn1, fn2, fn3, fn4, fn5)(dispatch);
-        dispatch({type: '若川'});
+        const enhancerDispatch = compose(fn1, fn2, fn3, fn4, fn5)(dispatch);
+        console.log('enhancerDispatch', enhancerDispatch);
+        // dispatch({type: '若川'});
+        enhancerDispatch({type: '若川'})
     </script>
 </body>
 

@@ -34,16 +34,18 @@
             return 5;
         }
         const compose = (...funcs) => {
-            return funcs.reduce((preA, itemB) => {
+            return funcs.reduce(function(preFnA, itemFnB){
                 return function (...args) {
-                    return preA(itemB(...args));
+                    return preFnA(itemFnB(...args));
                 }
             });
         }
         function dispatch(action){
             console.log('action:', action);
+            return action;
         }
-        compose(fn1, fn2, fn3, fn4, fn5)(dispatch);
+        const enhancerDispatch = compose(fn1, fn2, fn3, fn4, fn5)(dispatch);
+        console.log('enhancerDispatch', enhancerDispatch);
         dispatch({type: '若川'});
     </script>
 </body>
