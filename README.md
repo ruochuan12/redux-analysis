@@ -611,9 +611,19 @@ console.log(calc(10));
 // 15
 ```
 
+`pre` 是上一次返回值，在这里是数值`1,3,6,10`。在下一个例子中则是匿名函数。
+
 ```js
-const compose = (...func) => {
-  return func.reduce((a, b) => {
+function(x){
+  return a(b(x));
+}
+```
+
+`item`是`2,3,4,5`，在下一个例子中是`minus、add、multiply`。
+
+```js
+const compose = (...funcs) => {
+  return funcs.reduce((a, b) => {
     return function(x){
       return a(b(x));
     }
@@ -625,93 +635,9 @@ console.log(calc(10));
 // 108
 ```
 
-我们把数组`[1,2,3,4,5]`转成函数`[fn1,fn2,fn3,fn4,fn5]`
+而`Redux.compose(...functions)`其实就是这样，只不过中间件是返回双层函数罢了。
 
-```js
-function fn1() {
-    console.log(1);
-    return 1;
-}
-
-function fn2() {
-    console.log(2);
-    return 2;
-}
-
-function fn3() {
-    console.log(3);
-    return 3;
-}
-
-function fn4() {
-    console.log(4);
-    return 4;
-}
-
-function fn5() {
-    console.log(5);
-    return 5;
-}
-const compose = (...funcs) => {
-    return funcs.reduce((preFnA, itemFnB) => {
-        return function (...args) {
-            return preFnA(itemFnB(...args));
-        }
-    });
-}
-function dispatch(action){
-    console.log('action:', action);
-}
-compose(fn1, fn2, fn3, fn4, fn5)(dispatch);
-dispatch({type: '若川'});
-```
-
-```js
-const compose = (...arr) => {
-  return arr.reduce((pre, item, index, arr) => {
-    return function(x){
-      return pre + item;
-    }
-  });
-}
-compose(1,2,3,4,5);
-[1,2,3,4,5].reduce((pre, item, index, arr) => {
-  return function(x){
-    return pre + item;
-  }
-});
-```
-
-```js
-funcs
-[(next) =>  action => {
-      console.log('will dispatch--1--next, action:', next, action)
-
-      // Call the next dispatch method in the middleware chain.
-      const returnValue = next(action)
-
-      console.log('state after dispatch--1', getState())
-
-      // This will likely be the action itself, unless
-      // a middleware further in chain changed it.
-      return returnValue
-}, function(next){
-      return function (action){
-          console.log('will dispatch--2--next, action:', next, action)
-
-          // Call the next dispatch method in the middleware chain.
-          const returnValue = next(action)
-
-          console.log('state after dispatch--2', getState())
-
-          // This will likely be the action itself, unless
-          // a middleware further in chain changed it.
-          return returnValue
-      }
-}, function(next){
-  
-}]
-```
+所以把他们串起来执行了，形成了中间件的洋葱模型。
 
 ## 6. Redux.combineReducers(reducers)
 
