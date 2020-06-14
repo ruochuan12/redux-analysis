@@ -21,13 +21,14 @@
 源码类文章，一般阅读量不高。已经有能力看懂的，自己就看了。不想看，不敢看的就不会去看源码。<br>
 所以我的文章，尽量写得让想看源码又不知道怎么看的读者能看懂。
 
-TODO:
 阅读本文你将学到：
 
 >1. `git subtree` 管理子仓库
 >2. 如何学习 `redux` 源码
->3. `redux` 中间件
->4. `vuex` 和 `redux`  的对比
+>3. `redux` 中间件原理
+>4. `redux` 各个`API`的实现
+>5. `vuex` 和 `redux`  的对比
+>6. 等等
 
 **本文阅读最佳方式**
 
@@ -637,11 +638,25 @@ console.log(calc(10));
 
 而`Redux.compose(...functions)`其实就是这样，只不过中间件是返回双层函数罢了。
 
-所以把他们串起来执行了，形成了中间件的洋葱模型。
+所以返回的是`next函数`，他们串起来执行了，形成了中间件的洋葱模型。
+人们都说一图胜千言。我画了一个相对简单的`redux`中间件原理图。
+
+![`redux`中间件原理图](./images/redux.middleware.drawio.png)
+
+如果还不是很明白，建议按照我给出的例子，多调试。
+
+```bash
+cd redux-analysis && hs -p 5000
+# 上文说过npm i -g http-server
+```
+
+打开`http://localhost:5000/examples/index.3.html`，按`F12`打开控制台调试。
 
 ## 6. Redux.combineReducers(reducers)
 
-合并`reducer`
+打开`http://localhost:5000/examples/index.4.html`，按`F12`打开控制台，按照给出的例子，调试接下来的`Redux.combineReducers(reducers)`和`Redux.bindActionCreators(actionCreators, dispatch)`具体实现。由于文章已经很长了，这两个函数就不那么详细解释了。
+
+`combineReducers`函数简单来说就是合并多个`reducer`为一个函数`combination`。
 
 ```js
 export default function combineReducers(reducers) {
@@ -650,53 +665,40 @@ export default function combineReducers(reducers) {
   for (let i = 0; i < reducerKeys.length; i++) {
     const key = reducerKeys[i]
 
-    if (process.env.NODE_ENV !== 'production') {
-      if (typeof reducers[key] === 'undefined') {
-        warning(`No reducer provided for key "${key}"`)
-      }
-    }
+    // 省略一些开发环境判断的代码...
 
     if (typeof reducers[key] === 'function') {
       finalReducers[key] = reducers[key]
     }
   }
+
+  // 经过一些处理后得到最后的finalReducerKeys
   const finalReducerKeys = Object.keys(finalReducers)
 
-  // This is used to make sure we don't warn about the same
-  // keys multiple times.
-  let unexpectedKeyCache
-  if (process.env.NODE_ENV !== 'production') {
-    unexpectedKeyCache = {}
-  }
-
-  let shapeAssertionError
-  try {
-    assertReducerShape(finalReducers)
-  } catch (e) {
-    shapeAssertionError = e
-  }
+  // 省略一些开发环境判断的代码...
 
   return function combination(state = {}, action) {
-    if (shapeAssertionError) {
-      throw shapeAssertionError
-    }
-
     // ... 省略开发环境的一些判断
 
+   // 用 hasChanged变量 记录前后 state 是否已经修改
     let hasChanged = false
+    // 声明对象来存储下一次的state
     const nextState = {}
+    //遍历 finalReducerKeys
     for (let i = 0; i < finalReducerKeys.length; i++) {
       const key = finalReducerKeys[i]
       const reducer = finalReducers[key]
       const previousStateForKey = state[key]
+      // 执行 reducer
       const nextStateForKey = reducer(previousStateForKey, action)
-      if (typeof nextStateForKey === 'undefined') {
-        const errorMessage = getUndefinedStateErrorMessage(key, action)
-        throw new Error(errorMessage)
-      }
+
+      // 省略容错代码 ...
+
       nextState[key] = nextStateForKey
+      // 两次 key 对比 不相等则发生改变
       hasChanged = hasChanged || nextStateForKey !== previousStateForKey
     }
+    // 最后的 keys 数组对比 不相等则发生改变
     hasChanged =
       hasChanged || finalReducerKeys.length !== Object.keys(state).length
     return hasChanged ? nextState : state
@@ -705,6 +707,8 @@ export default function combineReducers(reducers) {
 ```
 
 ## 7. Redux.bindActionCreators(actionCreators, dispatch)
+
+如果第一个参数是一个函数，那就直接返回一个函数。如果是一个对象，则遍历赋值，最终生成`boundActionCreators`对象。
 
 ```js
 function bindActionCreator(actionCreator, dispatch) {
@@ -751,9 +755,7 @@ export default function bindActionCreators(actionCreators, dispatch) {
 
 相对来说，`vuex`上手相对简单，`redux`相对难一些，`redux`涉及到一些函数式编程、高阶函数、纯函数等概念。
 
-## 9. 总结 中心思想是什么
-
-小时候语文课本习题经常问文章的中心思想是什么。
+## 9. 总结
 
 文章主要通过一步步调试的方式循序渐进地讲述`redux`源码的具体实现。旨在教会读者调试源码，不惧怕源码。
 
@@ -791,13 +793,3 @@ export default function bindActionCreators(actionCreators, dispatch) {
 可能比较有趣的微信公众号，长按扫码关注（**回复pdf获取前端优质书籍pdf**）。欢迎加我微信`ruochuan12`（注明来源，基本来者不拒），拉您进【前端视野交流群】，长期交流学习~
 
 ![若川视野](https://github.com/lxchuan12/blog/raw/master/docs/about/wechat-official-accounts-mini.jpg)
-
-TODO:
-
-相对详细的介绍
-
-- [ ] compose
-- [ ] bindActionCreator
-- [ ] combine
-- [ ] vuex 和 redux 对比
-- [ ] 总结
