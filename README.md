@@ -1,4 +1,4 @@
-# 学习 redux 源码整体架构，浅析 redux 中间件原理
+# 学习 redux 源码整体架构，深入学习 redux 和其中间件原理
 
 ## 1. 前言
 
@@ -30,7 +30,7 @@
 >5. `vuex` 和 `redux`  的对比
 >6. 等等
 
-**本文阅读最佳方式**
+### 1.1 本文阅读最佳方式
 
 把我的`redux`源码仓库 `git clone https://github.com/lxchuan12/redux-analysis.git`克隆下来，顺便`star`一下[我的redux源码学习仓库](https://github.com/lxchuan12/redux-analysis)^_^。**跟着文章节奏调试和示例代码调试，用`chrome`动手调试印象更加深刻**。文章长段代码不用细看，可以调试时再细看。看这类源码文章百遍，可能不如自己多调试几遍。也欢迎加我微信交流`ruochuan12`。
 
@@ -330,7 +330,7 @@ function getState() {
 
 ### 4.4 store.subscribe(listener)
 
-订阅
+订阅监听函数，存放在数组中，`store.dispatch(action)`时遍历执行。
 
 ```js
 function subscribe(listener) {
@@ -652,6 +652,30 @@ cd redux-analysis && hs -p 5000
 
 打开`http://localhost:5000/examples/index.3.html`，按`F12`打开控制台调试。
 
+#### 5.2.2 前端框架的 compose 函数的实现
+
+**lodash**源码中 `compose`函数的实现，也是类似于数组的`reduce`，只不过是内部实现的`arrayReduce`
+
+[引用自我的文章：学习lodash源码整体架构](https://juejin.im/post/5d767e1d6fb9a06b032025ea#heading-20)
+
+```js
+// lodash源码
+function baseWrapperValue(value, actions) {
+	var result = value;
+	// 如果是lazyWrapper的实例，则调用LazyWrapper.prototype.value 方法，也就是 lazyValue 方法
+	if (result instanceof LazyWrapper) {
+		result = result.value();
+	}
+	// 类似 [].reduce()，把上一个函数返回结果作为参数传递给下一个函数
+	return arrayReduce(actions, function(result, action) {
+		return action.func.apply(action.thisArg, arrayPush([result], action.args));
+	}, result);
+}
+```
+
+**koa-compose**源码也有`compose`函数的实现。实现是循环加`promise`。
+由于代码比较长我就省略了，具体看链接[若川：学习 koa 源码的整体架构，浅析koa洋葱模型原理和co原理](https://juejin.im/post/5e69925cf265da571e262fe6#heading-7)小节 `koa-compose 源码`（洋葱模型实现）
+
 ## 6. Redux.combineReducers(reducers)
 
 打开`http://localhost:5000/examples/index.4.html`，按`F12`打开控制台，按照给出的例子，调试接下来的`Redux.combineReducers(reducers)`和`Redux.bindActionCreators(actionCreators, dispatch)`具体实现。由于文章已经很长了，这两个函数就不那么详细解释了。
@@ -749,6 +773,30 @@ export default function bindActionCreators(actionCreators, dispatch) {
 
 ### 8.3 扩展
 
+```js
+// logger 插件，具体实现省略
+function logger (store) {
+  console.log('store', store);
+}
+// 作为数组传入
+new Vuex.Store({
+  state,
+  getters,
+  actions,
+  mutations,
+  plugins: process.env.NODE_ENV !== 'production'
+    ? [logger]
+    : []
+})
+// vuex 源码 插件执行部分
+class Store{
+  constructor(){
+    // 把vuex的实例对象 store整个对象传递给插件使用
+    plugins.forEach(plugin => plugin(this))
+  }
+}
+```
+
 `vuex`实现扩展则是使用插件形式，而`redux`是中间件的形式。`redux`的中间件则是AOP（面向切面编程），`redux`中`Redux.applyMiddleware()`其实也是一个增强函数，所以也可以用户来实现增强器，所以[`redux`生态](https://www.redux.org.cn/docs/introduction/Ecosystem.html)比较繁荣。
 
 ### 8.4 上手难易度
@@ -759,7 +807,47 @@ export default function bindActionCreators(actionCreators, dispatch) {
 
 文章主要通过一步步调试的方式循序渐进地讲述`redux`源码的具体实现。旨在教会读者调试源码，不惧怕源码。
 
+面试官经常喜欢考写一个`redux`中间件，说说`redux`中间件的原理。
+
+```js
+function logger1({ getState }) {
+  return next => action => {
+      const returnValue = next(action)
+      return returnValue
+  }
+}
+```
+
+```js
+const compose = (...funcs) => {
+  if (funcs.length === 0) {
+    return arg => arg
+  }
+
+  if (funcs.length === 1) {
+    return funcs[0]
+  }
+
+  // 箭头函数
+  // return funcs.reduce((a, b) => (...args) => a(b(...args)))
+  return funcs.reduce((a, b) => {
+    return function(x){
+      return a(b(x));
+    }
+  })
+}
+```
+
+```js
+const enhancerStore = Redux.create(reducer, Redux.applyMiddleware(logger1, ...))
+enhancerStore.dispatch(action)
+```
+
+用户触发`enhancerStore.dispatch(action)`是增强后的，其实就是第一个中间件函数，中间的`next`是下一个中间件函数，最后`next`是没有增强的`store.dispatch(action)`。
+
 最后再来看张`redux`工作流程图 ![`redux`工作流程图](./images/redux-workflow-gif.png)是不是就更理解些了呢。
+
+如果读者发现有不妥或可改善之处，再或者哪里没写明白的地方，欢迎评论指出。另外觉得写得不错，对你有些许帮助，可以点赞、评论、转发分享，也是对我的一种支持，非常感谢呀。**要是有人说到怎么读源码，正在读文章的你能推荐我的源码系列文章，那真是太好了**。
 
 ## 推荐阅读
 
@@ -790,6 +878,6 @@ export default function bindActionCreators(actionCreators, dispatch) {
 
 ## 欢迎加微信交流 微信公众号
 
-可能比较有趣的微信公众号，长按扫码关注（**回复pdf获取前端优质书籍pdf**）。欢迎加我微信`ruochuan12`（注明来源，基本来者不拒），拉您进【前端视野交流群】，长期交流学习~
+可能比较有趣的微信公众号，长按扫码关注（**回复pdf获取前端优质书籍pdf**）。欢迎加我微信`ruochuan12`（注明来源，基本来者不拒），拉你进【前端视野交流群】，长期交流学习~
 
 ![若川视野](https://github.com/lxchuan12/blog/raw/master/docs/about/wechat-official-accounts-mini.jpg)
